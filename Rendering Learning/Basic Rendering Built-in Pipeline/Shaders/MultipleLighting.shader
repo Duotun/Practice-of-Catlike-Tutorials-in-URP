@@ -36,10 +36,13 @@ Shader "Custom/MultipleLighting"
 			ZWrite Off  // writing depth the second time for the opaque objects are meaningless, so we disable it in this pass
 			CGPROGRAM
 
+			#pragma multi_compile DIRECTIONAL POINT SPOT
 			#pragma target 3.0
 			#pragma vertex MyVertexProgram
 			#pragma fragment MyFragmentProgram
 
+			//indicate point light in this pass
+			//#define POINT   
 			#include "MyLighting.cginc"
 
 			ENDCG

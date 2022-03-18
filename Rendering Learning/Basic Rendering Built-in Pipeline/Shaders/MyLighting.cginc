@@ -7,6 +7,9 @@ float _Smoothness;
 float4 _Tint;
 sampler2D _MainTex;
 float4 _MainTex_ST;
+
+//used for the light attenuation
+#include "AutoLight.cginc"    
 #include "UnityPBSLighting.cginc"
 			
 struct VertexData
@@ -44,8 +47,14 @@ UnityLight CreateLight (Interpolators i)
 {
     UnityLight light;
     float3 lightvec = _WorldSpaceLightPos0.xyz - i.worldPos;
+    #if defined(POINT) || defined(SPOT)
     light.dir = normalize(lightvec);   //obtin light information and calculate the light direction
-    float attenuation = 1.0 / (1.0 + dot(lightvec, lightvec));   //+1 to avoid wierd brightness when close to the surface
+    #else 
+    light.dir = _WorldSpaceLightPos0.xyz;   // otherwise, dir comes from the directional light 
+    #endif
+
+    //float attenuation = 1.0 / (1.0 + dot(lightvec, lightvec));   //+1 to avoid wierd brightness when close to the surface
+    UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
     light.color = _LightColor0.rgb * attenuation;
     light.ndotl = DotClamped(i.normal, light.dir);  //diffuse term
     return light;
