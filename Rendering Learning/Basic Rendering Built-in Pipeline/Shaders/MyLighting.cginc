@@ -27,9 +27,32 @@ struct Interpolators
     float3 localposition : TEXCOORD2; //SEMANTICS ARE THE SAME is fine
     float2 uv : TEXCOORD0;
     float3 worldPos : TEXCOORD3; //used for specular lighting
+    #if defined(VERTEXLIGHT_ON)
+    float3 vertexLightColor: TEXCOORD4;
+    #endif
 
 };
 
+void ComputeVertexLightColor(inout Interpolators i)
+{
+#if defined(VERTEXLIGHT_ON)
+    /*float3 lightPos = float3(
+        unity_4LightPosX0.x, unity_4LightPosY0.x, unity_4LightPosZ0.x
+    );
+    float3 lightVec = lightPos - i.worldPos;
+    float3 lightDir = normalize(lightVec);
+    float ndotl = DotClamped(i.normal, lightDir);
+    float attenuation = 1 / (1+dot(lightVec, lightVec) * unity_4LightAtten0.x);
+    i.vertexLightColor = unity_LightColor[0].rgb * ndotl * attenuation;
+    */
+    //change to support up to 4 vertex lights in the forward base
+    i.vertexLightColor = Shade4PointLights(
+        unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
+        unity_LightColor[0].rgb, unity_LightColor[1].rgb,
+        unity_LightColor[2].rgb, unity_LightColor[2].rgb,
+        unity_4LightAtten0, i.worldPos, i.normal);
+#endif
+}
 //Pass-in object space vertex
 Interpolators MyVertexProgram(VertexData v)
 {
@@ -39,6 +62,7 @@ Interpolators MyVertexProgram(VertexData v)
     i.position = UnityObjectToClipPos(v.position);
     i.normal = UnityObjectToWorldNormal(v.normal);
     i.worldPos = mul(unity_ObjectToWorld, v.position);
+    ComputeVertexLightColor(i);   //compute vertex light in the vertex stage
     return i;
 }
 
@@ -60,6 +84,25 @@ UnityLight CreateLight (Interpolators i)
     return light;
 }
 
+UnityIndirect CreateIndirectLight(Interpolators i)
+{
+    //self-define the indirect light
+    UnityIndirect indirectLight;
+    indirectLight.diffuse = 0;
+    indirectLight.specular = 0;
+
+    #if defined(VERTEXLIGHT_ON)   
+        //add vertex light to the indirect light diffuse term
+        indirectLight.diffuse = i.vertexLightColor;
+    #endif 
+
+    //add spherical harmonics
+    #if defined(FORWARD_BASE_PASS)
+        indirectLight.diffuse += max(0.0, ShadeSH9(float4(i.normal, 1.0)));
+    #endif 
+    return indirectLight;
+}
+
 float4 MyFragmentProgram(Interpolators i) : SV_TARGET
 { // SV_TARGET Stands for the frame buffer
 				
@@ -76,9 +119,6 @@ float4 MyFragmentProgram(Interpolators i) : SV_TARGET
     //light.dir = lightDir;
     //light.ndotl = DotClamped(i.normal, lightDir); //diffuse term
 
-    UnityIndirect indirectLight;
-    indirectLight.diffuse = 0;
-    indirectLight.specular = 0;
 
 				//add the albedo maintex
     float3 albedo = tex2D(_MainTex, i.uv).rgb * _Tint.rgb;
@@ -92,12 +132,16 @@ float4 MyFragmentProgram(Interpolators i) : SV_TARGET
     // energy consevation, monochrome manual way, no use
     //float3 diffuse = albedo * lightColor * DotClamped(lightDir, i.normal);
     //float3 specular = specularTint * lightColor * pow(DotClamped(halfVector, i.normal), _Smoothness * 10);
-
+    
+    //ShadeSH9 used for the ambient lights
+    //float3 shColor = ShadeSH9(float4(i.normal, 1));
+    //return float4(shColor, 1.0);
+    
     return UNITY_BRDF_PBS(
 				 albedo, specularTint,
 				 oneMinusReflectivity, _Smoothness,
 				 i.normal, viewDir,
-				 CreateLight(i), indirectLight
+				 CreateLight(i), CreateIndirectLight(i)
 				);
 				
 }
