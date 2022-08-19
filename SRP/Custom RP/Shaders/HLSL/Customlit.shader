@@ -1,4 +1,4 @@
-Shader "Custom/CustomUnlit"
+Shader "Custom/Customlit"
 {
     Properties
     {
@@ -8,6 +8,8 @@ Shader "Custom/CustomUnlit"
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend("Dst Blend", Float) = 0.0
         [Enum(Off, 0, On, 1)] _ZWrite("Z Write", Float) = 1.0
         [Toggle(_CLIPPING)] _Cutoff("Alpha Cutoff", Float) = 0.1
+        _Metallic ("Metallic", Range(0, 1)) = 0
+        _Smoothness ("Smoothness", Range(0, 1)) = 0.5 
     }
     SubShader
     {
@@ -15,17 +17,22 @@ Shader "Custom/CustomUnlit"
         
         Pass
         {
+            Tags {
+                "LightMode" = "CustomLit"
+            }
+
             Blend [_SrcBlend][_DstBlend]
             ZWrite [_ZWrite]
             HLSLPROGRAM
-            
+            #pragma target 3.5 
+
             #pragma multi_compile_instancing
             #pragma shader_feature _CLIPPING
-            #pragma vertex UnlitPassVertex
-            #pragma fragment UnlitPassFragment
+            #pragma vertex LitPassVertex
+            #pragma fragment LitPassFragment
 
             //insert the entire contents of the file of the include directive
-            #include "UnlitPass.hlsl" 
+            #include "LightPass.hlsl" 
             
             ENDHLSL
         }

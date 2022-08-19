@@ -22,6 +22,7 @@ public class CustomRenderPipeline : RenderPipeline
     {
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
-        GraphicsSettings.useScriptableRenderPipelineBatching = false;
+        GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
+        GraphicsSettings.lightsUseLinearIntensity = true;   // light color -> linear Space
     }
 }

@@ -27,8 +27,10 @@ public class MeshBall : MonoBehaviour
                     Random.value * 360f, Random.value * 360f, Random.value * 360f
                 ),
                 Vector3.one * Random.Range(0.5f, 1.5f));
-            baseColors[i] = new Vector4(Random.value, Random.value, Random.value, Random.Range(0.5f, 1f));
+            baseColors[i] = new Vector4(Random.value, Random.value, Random.value, Random.Range(0.5f, 1.5f));
         }
+
+        //print("Here?");
     }
     // Update is called once per frame
     void Update()
@@ -38,6 +40,6 @@ public class MeshBall : MonoBehaviour
             block = new MaterialPropertyBlock();
             block.SetVectorArray(baseColorId, baseColors);  //set colors for instanced colors
         }
-        UnityEngine.Graphics.DrawMeshInstanced(mesh, 0, material, matrices, 1023, block);
+        Graphics.DrawMeshInstanced(mesh, 0, material, matrices, 1023, block);
     }
 }

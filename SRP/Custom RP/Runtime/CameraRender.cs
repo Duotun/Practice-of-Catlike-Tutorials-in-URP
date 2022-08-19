@@ -16,6 +16,10 @@ public partial class CameraRender
 
     CullingResults cullingResults;
     static ShaderTagId unlitshaderTagId = new ShaderTagId("SRPDefaultUnlit");   //tag pass
+    static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
+    Lighting lighting = new Lighting();
+
+
     public void Render(ScriptableRenderContext context, Camera camera,
         bool useDynamicBatching, bool useGPUInstancing)
     {
@@ -29,13 +33,14 @@ public partial class CameraRender
         if (!Cull()) return;  // if culling parameters are not retrieved, return 
 
         Setup();
+        lighting.Setup(context, cullingResults);   //setup light before thedrawing objects
+
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
         Submit();
     }
-   
-     
+
     void Setup()
     {
         context.SetupCameraProperties(camera);  //set up the camera for this rendering
@@ -59,6 +64,9 @@ public partial class CameraRender
             enableDynamicBatching = useDynamicBatching,
             enableInstancing = useGPUInstancing
         };
+
+        drawingSettings.SetShaderPassName(1, litShaderTagId);
+
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
 
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
@@ -68,6 +76,7 @@ public partial class CameraRender
         sortSettings.criteria = SortingCriteria.CommonTransparent;
         drawingSettings.sortingSettings = sortSettings;
         filteringSettings.renderQueueRange = RenderQueueRange.transparent;
+        context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
 
     }
