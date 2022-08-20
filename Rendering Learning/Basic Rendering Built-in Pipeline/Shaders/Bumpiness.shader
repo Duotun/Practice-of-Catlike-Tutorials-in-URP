@@ -1,13 +1,22 @@
-Shader "Custom/MultipleLighting"
+Shader "Custom/Bumpiness"
 {
    //properties are the same level of Subshader
    Properties {
 			_Tint("Tint", Color) = (1, 1, 1, 1)
-			//_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)    //non-use, PBR from Unity inner functions is used now
+			[NoScaleOffset] _NormalMap("Normals", 2D) = "bump"{}
+			_BumpScale("Bump Scale", Float) = 1
 			[Gamma]_MainTex("Albedo", 2D) = "white" {}   //add a Gamma tag for auto gamma correction
 			_Metallic("Metallic", Range(0, 1)) = 0
 			_Smoothness ("Smoothness", Range(0, 1)) = 0.5
+			_DetailTex ("Detail Texture", 2D) = "gray"{}
+			[NoScaleOffset] _DetailNormalMap("Detail Normals", 2D) = "bump"{}
+			_DetailBumpScale("Detail Bump Scale", Float) = 1
 	    }		
+
+	//define CG Program including for all subshader and passes
+	CGINCLUDE
+	 //#define BINORMAL_PER_FRAGMENT
+	ENDCG
 
 	SubShader{  
 		Pass {
